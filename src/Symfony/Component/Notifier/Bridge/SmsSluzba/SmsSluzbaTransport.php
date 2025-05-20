@@ -63,18 +63,22 @@ final class SmsSluzbaTransport extends AbstractTransport
 
         $options = $message->getOptions()?->toArray() ?? [];
 
+        $send_at = $options['send_at'] ?? '';
+        $xml = <<<XML
+                <outgoing_message>
+                    <dr_request>20</dr_request>
+                    <recipient>{$message->getPhone()}</recipient>
+                    <text>{$message->getSubject()}</text>
+                    <send_at>{$send_at}</send_at>
+                </outgoing_message>
+                XML;
         $response = $this->client->request('POST', $endpoint, [
             'headers' => [
                 'Content-Type' => 'text/xml',
+                'Content-length' => strlen($xml),
+
             ],
-            'body' => [
-                'outgoing_message' => [
-                    'dr_request' => 20, // 0 = delivery report is not required; 20 = delivery report is required
-                    'recipient' => $message->getPhone(),
-                    'text' => $message->getSubject(),
-                    'send_at' => $options['send_at'] ?? null,
-                ],
-            ],
+            'body' => $xml,
         ]);
 
         try {
